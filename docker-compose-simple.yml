@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: latency-hunter-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=latency-hunter
+      - DOCKER_INFLUXDB_INIT_BUCKET=network-telemetry
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token-change-me-in-production
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    networks:
+      - latency-hunter-mgmt
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: latency-hunter-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./configs/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./configs/grafana/dashboard-files:/var/lib/grafana/dashboards
+    depends_on:
+      - influxdb
+    networks:
+      - latency-hunter-mgmt
+    user: "0:0"
+
+networks:
+  latency-hunter-mgmt:
+    external: true

@@ -1,0 +1,86 @@
+version: '3.8'
+
+###############################################################################
+# Latency Hunter - Stack TIG (Telegraf, InfluxDB, Grafana)
+# 
+# Cette stack compose les services de monitoring:
+# - InfluxDB: Base de données time-series
+# - Telegraf: Collecteur gNMI avec streaming telemetry
+# - Grafana: Visualisation et dashboards
+###############################################################################
+
+services:
+  
+  # InfluxDB - Base de données time-series
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: latency-hunter-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminadmin
+      - DOCKER_INFLUXDB_INIT_ORG=latency-hunter
+      - DOCKER_INFLUXDB_INIT_BUCKET=network-telemetry
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token-change-me-in-production
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    networks:
+      - latency-hunter-mgmt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Telegraf - Collecteur gNMI
+  telegraf:
+    image: telegraf:1.28-alpine
+    container_name: latency-hunter-telegraf
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    volumes:
+      - ./configs/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - latency-hunter-mgmt
+    restart: unless-stopped
+    environment:
+      - INFLUX_TOKEN=my-super-secret-token-change-me-in-production
+      - INFLUX_ORG=latency-hunter
+      - INFLUX_BUCKET=network-telemetry
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Grafana - Visualisation
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: latency-hunter-grafana
+    depends_on:
+      - influxdb
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/latency-hunter.json
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./configs/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./configs/grafana/dashboard-files:/var/lib/grafana/dashboards:ro
+    networks:
+      - latency-hunter-mgmt
+    restart: unless-stopped
+
+networks:
+  latency-hunter-mgmt:
+    driver: bridge
+    external: true
+

@@ -1,0 +1,48 @@
+name: latency-hunter
+
+topology:
+  nodes:
+    # Switch Arista cEOS avec gNMI activé
+    spine-01:
+      kind: ceos
+      image: ceos:latest
+      mgmt-ipv4: 172.20.20.10
+      ports:
+        - 6030:6030  # gNMI/gRPC port
+        - 8080:80    # Web UI (optionnel)
+      env:
+        INTFTYPE: et  # Interface type: ethernet
+      startup-config: ../configs/switch/arista-ceos.cfg
+
+    # Générateur de trafic 1 (Alpine Linux avec iperf3)
+    traffic-gen-1:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.21
+      exec:
+        - apk add --no-cache iperf3 bash tcpdump
+        - ip addr add 10.0.1.11/24 dev eth1
+        - ip link set eth1 up
+
+    # Générateur de trafic 2 (Alpine Linux avec iperf3)
+    traffic-gen-2:
+      kind: linux
+      image: alpine:latest
+      mgmt-ipv4: 172.20.20.22
+      exec:
+        - apk add --no-cache iperf3 bash tcpdump
+        - ip addr add 10.0.1.12/24 dev eth1
+        - ip link set eth1 up
+        - iperf3 -s -D  # Démarre le serveur iperf3 en arrière-plan
+
+  links:
+    # Connexion traffic-gen-1 au switch
+    - endpoints: ["traffic-gen-1:eth1", "spine-01:eth1"]
+    
+    # Connexion traffic-gen-2 au switch
+    - endpoints: ["traffic-gen-2:eth1", "spine-01:eth2"]
+
+mgmt:
+  network: latency-hunter-mgmt
+  ipv4-subnet: 172.20.20.0/24
+

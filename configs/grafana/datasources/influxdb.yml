@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB-LatencyHunter
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: latency-hunter
+      defaultBucket: network-telemetry
+      tlsSkipVerify: true
+    secureJsonData:
+      token: my-super-secret-token-change-me-in-production
+    isDefault: true
+    editable: true
+
