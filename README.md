@@ -16,16 +16,16 @@ Latency Hunter is an advanced network monitoring system designed to detect micro
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Ubuntu 22.04 VM                          │
-│                                                              │
-│  ┌──────────────┐      ┌──────────────┐                    │
-│  │   Traffic    │      │   Traffic    │                    │
-│  │  Generator 1 │──────│  Generator 2 │                    │
-│  └──────┬───────┘      └──────┬───────┘                    │
+│                     Ubuntu 22.04 VM                         │
+│                                                             │
+│  ┌──────────────┐      ┌──────────────┐                     │
+│  │   Traffic    │      │   Traffic    │                     │
+│  │  Generator 1 │──────│  Generator 2 │                     │
+│  └──────┬───────┘      └──────┬───────┘                     │
 │         │                      │                            │
-│         │    ┌─────────────────┴──────┐                    │
-│         └────┤   Linux Bridge         │                    │
-│              │   (Network Switch)     │                    │
+│         │    ┌─────────────────┴──────┐                     │
+│         └────┤   Linux Bridge         │                     │
+│              │   (Network Switch)     │                     │
 │              └──────────┬──────────────┘                    │
 │                         │                                   │
 │              ┌──────────▼──────────────┐                    │
@@ -352,3 +352,4 @@ Transfer to Windows using SCP or WinSCP.
 ## Tags
 
 `network-automation` `containerlab` `docker` `grafana` `influxdb` `telegraf` `iperf3` `gnmi` `hft` `low-latency` `infrastructure-as-code` `python` `monitoring`
+
